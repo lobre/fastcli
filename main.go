@@ -35,36 +35,40 @@ func (c Config) getEnv(name string) (Env, error) {
 
 func main() {
 	if !cmdExists("http") {
-		fmt.Print("httpie is not installed")
+		fmt.Println("httpie is not installed")
 		os.Exit(1)
 	}
 
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	confPath := path.Join(userHome, configFile)
 	if !fileExists(confPath) {
-		fmt.Printf("no config file at %s", confPath)
+		fmt.Printf("no config file at %s\n", confPath)
 		os.Exit(1)
 	}
 
 	f, err := ioutil.ReadFile(confPath)
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	var conf Config
 	if err := json.Unmarshal(f, &conf); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	var envName string
+	var verbose bool
+	var pretty string
 	flag.StringVar(&envName, "e", "", "environment")
+	flag.BoolVar(&verbose, "v", false, "verbose")
+	flag.StringVar(&pretty, "p", "all", "pretty")
 	flag.Parse()
 
 	if envName == "" {
@@ -74,7 +78,7 @@ func main() {
 
 	env, err := conf.getEnv(envName)
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
@@ -84,10 +88,16 @@ func main() {
 	}
 
 	var args []string
+	if verbose {
+		args = append(args, "-v")
+	}
+	args = append(args, "--ignore-stdin")
+	args = append(args, fmt.Sprintf("--pretty=%s", pretty))
 	args = append(args, fmt.Sprintf("%s/service/%s/%s", fastlyURL, env.ID, flag.Args()[0]))
 	args = append(args, flag.Args()[1:]...)
 	args = append(args, fmt.Sprintf("Fastly-Key:%s", env.Token))
 	cmd := exec.Command("http", args...)
+	fmt.Printf("executing: %s\n", cmd.String())
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -95,7 +105,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Print(string(output))
+	fmt.Println(string(output))
 }
 
 func cmdExists(cmd string) bool {
