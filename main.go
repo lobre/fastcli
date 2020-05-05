@@ -97,7 +97,10 @@ func main() {
 	args = append(args, flag.Args()[1:]...)
 	args = append(args, fmt.Sprintf("Fastly-Key:%s", env.Token))
 	cmd := exec.Command("http", args...)
-	fmt.Printf("executing: %s\n", cmd.String())
+
+	if verbose {
+		fmt.Printf("executing: %s\n", cmd.String())
+	}
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
