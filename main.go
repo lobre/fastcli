@@ -65,9 +65,11 @@ func main() {
 
 	var envName string
 	var verbose bool
+	var root bool
 	var pretty string
 	flag.StringVar(&envName, "e", "", "environment")
 	flag.BoolVar(&verbose, "v", false, "verbose")
+	flag.BoolVar(&root, "r", false, "root")
 	flag.StringVar(&pretty, "p", "all", "pretty")
 	flag.Parse()
 
@@ -93,7 +95,11 @@ func main() {
 	}
 	args = append(args, "--ignore-stdin")
 	args = append(args, fmt.Sprintf("--pretty=%s", pretty))
-	args = append(args, fmt.Sprintf("%s/service/%s/%s", fastlyURL, env.ID, flag.Args()[0]))
+	if root {
+		args = append(args, fmt.Sprintf("%s/%s", fastlyURL, flag.Args()[0]))
+	} else {
+		args = append(args, fmt.Sprintf("%s/service/%s/%s", fastlyURL, env.ID, flag.Args()[0]))
+	}
 	args = append(args, flag.Args()[1:]...)
 	args = append(args, fmt.Sprintf("Fastly-Key:%s", env.Token))
 	cmd := exec.Command("http", args...)
